@@ -1,31 +1,80 @@
 package com.example.test.util;
 
+import com.example.test.config.DoubleSerializer;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateSerializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalTimeSerializer;
+import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 
-import java.util.ArrayList;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 
 public class JacksonUtils {
-    private final static ObjectMapper objectMapper = new ObjectMapper();
+    private final static ObjectMapper OBJECT_MAPPER;
+    static{
+        OBJECT_MAPPER = new ObjectMapper();
+        // 设置时区
+        OBJECT_MAPPER.setTimeZone(TimeZone.getTimeZone("GMT+8"));
+        // 设置时间格式
+        OBJECT_MAPPER.setDateFormat(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
+
+        JavaTimeModule javaTimeModule = new JavaTimeModule();
+        /** 序列化配置,针对java8 时间 **/
+        javaTimeModule.addSerializer(LocalDateTime.class, new LocalDateTimeSerializer(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        javaTimeModule.addSerializer(LocalDate.class, new LocalDateSerializer(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
+        javaTimeModule.addSerializer(LocalTime.class, new LocalTimeSerializer(DateTimeFormatter.ofPattern("HH:mm:ss")));
+
+        /** 反序列化配置,针对java8 时间 **/
+        javaTimeModule.addDeserializer(LocalDateTime.class, new LocalDateTimeDeserializer(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        javaTimeModule.addDeserializer(LocalDate.class, new LocalDateDeserializer(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
+        javaTimeModule.addDeserializer(LocalTime.class, new LocalTimeDeserializer(DateTimeFormatter.ofPattern("HH:mm:ss")));
+
+        /** 声明自定义模块,配置double类型序列化配置 **/
+        SimpleModule module = new SimpleModule("DoubleSerializer", new Version(1, 0, 0, ""));
+        // 注意Double和double需要分配配置
+        module.addSerializer(Double.class, new DoubleSerializer());
+        module.addSerializer(double.class, new DoubleSerializer());
+
+        /** 注册模块 **/
+        OBJECT_MAPPER.registerModule(javaTimeModule)
+                .registerModule(module)
+                .registerModule(new Jdk8Module())
+                .registerModule(new ParameterNamesModule())
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    }
 
     private JacksonUtils() {
 
     }
 
     public static ObjectMapper getInstance() {
-        return objectMapper;
+        return OBJECT_MAPPER;
     }
 
     /**
      * javaBean、列表数组转换为json字符串
      */
     public static String obj2json(Object obj) throws Exception {
-        return objectMapper.writeValueAsString(obj);
+        return OBJECT_MAPPER.writeValueAsString(obj);
     }
 
     /**
@@ -40,26 +89,27 @@ public class JacksonUtils {
     /**
      * json 转JavaBean
      */
-
     public static <T> T json2pojo(String jsonString, Class<T> clazz) throws Exception {
-        objectMapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
-        return objectMapper.readValue(jsonString, clazz);
+        OBJECT_MAPPER.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
+        return OBJECT_MAPPER.readValue(jsonString, clazz);
     }
 
     /**
      * json字符串转换为map
      */
-    public static <T> Map<String, Object> json2map(String jsonString) throws Exception {
+    public static Map<String, Object> json2map(String jsonString) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        return mapper.readValue(jsonString, Map.class);
+        return mapper.readValue(jsonString, new TypeReference<Map<String, Object>>() {});
     }
 
     /**
      * json字符串转换为map
      */
     public static <T> Map<String, T> json2map(String jsonString, Class<T> clazz) throws Exception {
-        Map<String, T> map = objectMapper.readValue(jsonString, new TypeReference<Map<String, T>>() {});
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        Map<String, T> map = mapper.readValue(jsonString, new TypeReference<Map<String, T>>() {});
         return map;
     }
 
@@ -70,7 +120,7 @@ public class JacksonUtils {
      * @return
      */
     public static Map<String, Object> json2mapDeeply(String json) throws Exception {
-        return json2MapRecursion(json, objectMapper);
+        return json2MapRecursion(json, OBJECT_MAPPER);
     }
 
     /**
@@ -101,6 +151,10 @@ public class JacksonUtils {
 
         return list;
     }
+	public static <T> T json2ObjectList(String json,  Class<T> valueType) throws IOException {
+		ObjectMapper mapper = JacksonUtils.getInstance();
+		return mapper.readValue(json, valueType);
+	}
 
     /**
      * 把json解析成map，如果map内部的value存在jsonString，继续解析
@@ -138,10 +192,14 @@ public class JacksonUtils {
     /**
      * 与javaBean json数组字符串转换为列表
      */
-    public static <T> List<T> json2list(String jsonArrayStr, Class<T> clazz) throws Exception {
+    public static <T> List<T> json2list(String jsonArrayStr) throws Exception {
 
-        JavaType javaType = getCollectionType(ArrayList.class, clazz);
-        List<T> lst = (List<T>) objectMapper.readValue(jsonArrayStr, javaType);
+        List<T> lst = (List<T>) OBJECT_MAPPER.readValue(jsonArrayStr, List.class);
+        return lst;
+    }
+
+    public static <T> List<T> json2list(String jsonArrayStr, TypeReference<List<T>> typeReference) throws Exception {
+        List<T> lst = OBJECT_MAPPER.readValue(jsonArrayStr, typeReference);
         return lst;
     }
 
@@ -155,7 +213,7 @@ public class JacksonUtils {
      * @since 1.0
      */
     public static JavaType getCollectionType(Class<?> collectionClass, Class<?>... elementClasses) {
-        return objectMapper.getTypeFactory().constructParametricType(collectionClass, elementClasses);
+        return OBJECT_MAPPER.getTypeFactory().constructParametricType(collectionClass, elementClasses);
     }
 
 
@@ -163,29 +221,44 @@ public class JacksonUtils {
      * map  转JavaBean
      */
     public static <T> T map2pojo(Map map, Class<T> clazz) {
-        return objectMapper.convertValue(map, clazz);
+        return OBJECT_MAPPER.convertValue(map, clazz);
     }
 
     /**
-     * map 转json
-     *
-     * @param map
-     * @return
-     */
-    public static String mapToJson(Map map) {
-        try {
-            return objectMapper.writeValueAsString(map);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return "";
-    }
+	 * map 转json
+	 *
+	 * @param map
+	 * @return
+	 */
+	public static String mapToJson(Map map) {
+		try {
+			return OBJECT_MAPPER.writeValueAsString(map);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return "";
+	}
+	/**
+	 * map 转json
+	 *
+	 * @param object
+	 * @return
+	 */
+	public static String objectToJson(Object object) {
+		try {
+			return OBJECT_MAPPER.writeValueAsString(object);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return "";
+	}
 
     /**
      * map  转JavaBean
      */
     public static <T> T obj2pojo(Object obj, Class<T> clazz) {
-        return objectMapper.convertValue(obj, clazz);
+        return OBJECT_MAPPER.convertValue(obj, clazz);
     }
+
 
 }

@@ -1,6 +1,7 @@
 package com.example.test.util;
 
 import cn.hutool.core.math.MathUtil;
+import com.example.test.entity.Book;
 
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
@@ -14,7 +15,9 @@ import java.util.List;
 
 public class TestUtil {
     public static void main(String[] args) throws Exception {
-        System.out.println(StandardCharsets.UTF_8.name());
+        String json = "{\"id\":\"dd\",\"baba\":\"111\"}";
+        Book book = JacksonUtils.json2pojo(json, Book.class);
+        System.out.println(book);
     }
     public static List<String> truncateBySplit(String value, int n, String splitChar){
         List<String> result = new ArrayList<>();
