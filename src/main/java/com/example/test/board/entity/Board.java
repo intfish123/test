@@ -2,6 +2,10 @@ package com.example.test.board.entity;
 
 import java.time.LocalDateTime;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.baomidou.mybatisplus.annotation.TableField;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
@@ -60,6 +64,12 @@ public class Board implements Serializable {
      * 创建时间
      */
     private LocalDateTime createTime;
+
+    private Boolean isTest;
+
+    @TableField(value = "list_1")
+    private List<String> list = new ArrayList<>();
+
 
 
 }
