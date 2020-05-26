@@ -37,6 +37,8 @@ public class JacksonUtils {
         // 设置时间格式
         OBJECT_MAPPER.setDateFormat(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
 
+        OBJECT_MAPPER.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+
         JavaTimeModule javaTimeModule = new JavaTimeModule();
         /** 序列化配置,针对java8 时间 **/
         javaTimeModule.addSerializer(LocalDateTime.class, new LocalDateTimeSerializer(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
@@ -81,9 +83,7 @@ public class JacksonUtils {
      * javaBean、列表数组转换为json字符串,忽略空值
      */
     public static String obj2jsonIgnoreNull(Object obj) throws Exception {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        return mapper.writeValueAsString(obj);
+        return OBJECT_MAPPER.writeValueAsString(obj);
     }
 
     /**
@@ -98,18 +98,14 @@ public class JacksonUtils {
      * json字符串转换为map
      */
     public static Map<String, Object> json2map(String jsonString) throws Exception {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        return mapper.readValue(jsonString, new TypeReference<Map<String, Object>>() {});
+        return OBJECT_MAPPER.readValue(jsonString, new TypeReference<Map<String, Object>>() {});
     }
 
     /**
      * json字符串转换为map
      */
     public static <T> Map<String, T> json2map(String jsonString, Class<T> clazz) throws Exception {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        Map<String, T> map = mapper.readValue(jsonString, new TypeReference<Map<String, T>>() {});
+        Map<String, T> map = OBJECT_MAPPER.readValue(jsonString, new TypeReference<Map<String, T>>() {});
         return map;
     }
 

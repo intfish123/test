@@ -1,5 +1,8 @@
 package com.example.test.util.codegenerator;
 
+import cn.hutool.core.util.ClassUtil;
+import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.core.exceptions.MybatisPlusException;
 import com.baomidou.mybatisplus.core.toolkit.StringPool;
 import com.baomidou.mybatisplus.generator.AutoGenerator;
@@ -7,13 +10,21 @@ import com.baomidou.mybatisplus.generator.InjectionConfig;
 import com.baomidou.mybatisplus.generator.config.*;
 import com.baomidou.mybatisplus.generator.config.po.TableInfo;
 import com.baomidou.mybatisplus.generator.config.rules.NamingStrategy;
-import com.baomidou.mybatisplus.generator.engine.FreemarkerTemplateEngine;
 import com.baomidou.mybatisplus.generator.engine.VelocityTemplateEngine;
 import com.example.test.util.StringUtils;
+import org.apache.velocity.Template;
+import org.apache.velocity.VelocityContext;
+import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.runtime.RuntimeConstants;
+import org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
+import java.io.FileWriter;
+import java.io.StringWriter;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.*;
 
 
 /**
@@ -43,7 +54,8 @@ public class CodeGenerator {
         throw new MybatisPlusException("请输入正确的" + tip + "！");
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
+
         // 代码生成器
         AutoGenerator mpg = new AutoGenerator();
 
@@ -57,7 +69,7 @@ public class CodeGenerator {
 
         // 数据源配置
         DataSourceConfig dsc = new DataSourceConfig();
-        dsc.setUrl("jdbc:mysql://172.16.17.247:3306/pandora?useUnicode=true&useSSL=false&characterEncoding=utf8");
+        dsc.setUrl("jdbc:mysql://172.16.17.247:3306/pandora-test?useUnicode=true&useSSL=false&characterEncoding=utf8");
         // dsc.setSchemaName("public");
         dsc.setDriverName("com.mysql.jdbc.Driver");
         dsc.setUsername("root");
@@ -66,7 +78,7 @@ public class CodeGenerator {
 
         // 包配置
         PackageConfig pc = new PackageConfig();
-        pc.setModuleName(scanner("模块名"));
+//        pc.setModuleName(scanner("模块名"));
         pc.setParent("com.example.test");
         mpg.setPackageInfo(pc);
 
@@ -142,6 +154,87 @@ public class CodeGenerator {
 //        mpg.setTemplateEngine(new FreemarkerTemplateEngine());
         mpg.setTemplateEngine(new VelocityTemplateEngine());
         mpg.execute();
+
+        //生成 实体类 字段enum
+        List<String> clazzReferenceList = new ArrayList<>();
+        String packageName = pc.getParent();
+
+        String[] include = strategy.getInclude();
+        for (String s : include) {
+            clazzReferenceList.add(packageName + ".entity." + StrUtil.upperFirst(s));
+        }
+        String path = gc.getOutputDir()+"/"+packageName.replaceAll("\\.", "/")+"/entity";
+
+        Thread.sleep(1000);
+        generateColumnsEum(path, clazzReferenceList,projectPath+"/src/main/resources");
+    }
+    //创建 实体类 字段enum
+    private static void generateColumnsEum(String path, List<String> clazzReference, String resourcePath){
+        // 初始化模板引擎
+        VelocityEngine velocityEngine = new VelocityEngine();
+        Properties properties = new Properties();
+        properties.setProperty(velocityEngine.FILE_RESOURCE_LOADER_PATH, resourcePath); //此处的fileDir可以直接用绝对路径来
+        velocityEngine.init(properties);
+        // 获取模板文件
+        Template template = velocityEngine.getTemplate("template/EntityColumn.vm");
+        //com.example.test.entity.Directory
+        try {
+            for (String s : clazzReference) {
+                String packageName = s.substring(0, s.lastIndexOf("."));
+                Class<?> aClass = Class.forName(s);
+                String enumName = aClass.getSimpleName()+"Column";
+
+                // 设置变量，velocityContext是一个类似map的结构
+                VelocityContext velocityContext = new VelocityContext();
+                velocityContext.put("packageName", packageName);
+                velocityContext.put("clazzName", enumName);
+
+                List<String> list = new ArrayList<>();
+                Field[] fields = aClass.getDeclaredFields();
+                for (Field field : fields) {
+                    if(Modifier.isStatic(field.getModifiers()) || Modifier.isFinal(field.getModifiers())){ //如果是static
+                        continue;
+                    }
+                    if(!isSimpleType(field.getType())){
+                        continue;
+                    }
+                    TableField tableField = field.getAnnotation(TableField.class);
+                    if(tableField !=null){
+                        if(!tableField.exist()){
+                            continue;
+                        }
+                    }
+                    String columnName = StrUtil.toUnderlineCase(field.getName());
+                    list.add(columnName);
+                }
+                velocityContext.put("columnList", list);
+
+                // 输出渲染后的结果
+                StringWriter stringWriter = new StringWriter();
+                template.merge(velocityContext, stringWriter);
+                FileWriter fw = new FileWriter(path + "/" +enumName+".java");
+                fw.write(stringWriter.toString());
+                fw.close();
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+    private static boolean isSimpleType(Class<?> clazz){
+        if(clazz == null){
+            return false;
+        }
+        if(String.class.getTypeName().equals(clazz.getTypeName())){
+            return true;
+        }else if(Date.class.getTypeName().equals(clazz.getTypeName())){
+            return true;
+        }else if(LocalDateTime.class.getTypeName().equals(clazz.getTypeName())){
+            return true;
+        }else if(LocalDate.class.getTypeName().equals(clazz.getTypeName())){
+            return true;
+        }else{
+            return ClassUtil.isBasicType(clazz);
+        }
     }
 
 }

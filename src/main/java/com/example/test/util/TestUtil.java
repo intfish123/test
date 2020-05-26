@@ -1,23 +1,16 @@
 package com.example.test.util;
 
-import cn.hutool.core.math.MathUtil;
-import com.example.test.entity.Book;
+import com.example.test.entity.DirectoryColumn;
+import org.apache.commons.lang3.RandomStringUtils;
 
-import java.nio.charset.StandardCharsets;
-import java.text.DecimalFormat;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class TestUtil {
     public static void main(String[] args) throws Exception {
-        String json = "{\"id\":\"dd\",\"baba\":\"111\"}";
-        Book book = JacksonUtils.json2pojo(json, Book.class);
-        System.out.println(book);
+        String name = DirectoryColumn.is_deleted.name();
+        System.out.println(name);
     }
     public static List<String> truncateBySplit(String value, int n, String splitChar){
         List<String> result = new ArrayList<>();

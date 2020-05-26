@@ -1,0 +1,32 @@
+package $packageName;
+
+public enum $clazzName {
+
+#foreach($item in $columnList)
+  #if($foreach.count < $columnList.size())
+    $item.toUpperCase() ("$item", "$item"),
+  #else
+    $item.toUpperCase() ("$item", "$item");
+  #end
+#end
+
+    $clazzName (String columnName, String columnDesc){
+        this.columnName = columnName;
+        this.columnDesc =columnDesc;
+    }
+    private String columnName;
+    private String columnDesc;
+
+    public String getColumnName() {
+        return columnName;
+    }
+    public void setColumnName(String columnName) {
+        this.columnName = columnName;
+    }
+    public String getColumnDesc() {
+        return columnDesc;
+    }
+    public void setColumnDesc(String columnDesc) {
+        this.columnDesc = columnDesc;
+    }
+}
