@@ -14,4 +14,10 @@ public class HashUtil {
         long result = (long)murmur + (long)Integer.MAX_VALUE;
         return result;
     }
+
+    public static long murmur(String str){
+        int murmur = Hashing.murmur3_32().hashString(str, Charsets.UTF_8).asInt();
+        long result = (long)murmur + (long)Integer.MAX_VALUE;
+        return result;
+    }
 }

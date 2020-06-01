@@ -5,7 +5,6 @@ import cn.hutool.core.util.ReflectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.example.test.board.entity.Board;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -66,11 +65,7 @@ public class WrapperUtil {
     }
 
     public static void main(String[] args) throws Exception {
-        Board board = new Board();
-        board.setId("1");
-        board.setCreateTime(LocalDateTime.now());
-        board.setList(Collections.singletonList("fff"));
-        wrapper(board);
+
 
     }
 

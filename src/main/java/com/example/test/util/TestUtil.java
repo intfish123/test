@@ -1,16 +1,18 @@
 package com.example.test.util;
 
-import com.example.test.entity.DirectoryColumn;
-import org.apache.commons.lang3.RandomStringUtils;
+import com.example.test.entity.Book;
+import com.example.test.enums.Week;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 public class TestUtil {
     public static void main(String[] args) throws Exception {
-        String name = DirectoryColumn.is_deleted.name();
-        System.out.println(name);
+        String a = "7a52e4053a7bf92a";
+        for(int i=0;i<10;i++)
+            System.out.println(HashUtil.murmur(a));
+
+        a.hashCode();
     }
     public static List<String> truncateBySplit(String value, int n, String splitChar){
         List<String> result = new ArrayList<>();

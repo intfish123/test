@@ -1,5 +1,6 @@
 package com.example.test.util.codegenerator;
 
+import cn.hutool.core.util.ClassLoaderUtil;
 import cn.hutool.core.util.ClassUtil;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.annotation.TableField;
@@ -18,6 +19,7 @@ import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Field;
@@ -153,7 +155,8 @@ public class CodeGenerator {
         mpg.setStrategy(strategy);
 //        mpg.setTemplateEngine(new FreemarkerTemplateEngine());
         mpg.setTemplateEngine(new VelocityTemplateEngine());
-        mpg.execute();
+       mpg.execute();
+
 
         //生成 实体类 字段enum
         List<String> clazzReferenceList = new ArrayList<>();
@@ -164,12 +167,12 @@ public class CodeGenerator {
             clazzReferenceList.add(packageName + ".entity." + StrUtil.upperFirst(s));
         }
         String path = gc.getOutputDir()+"/"+packageName.replaceAll("\\.", "/")+"/entity";
-
-        Thread.sleep(1000);
         generateColumnsEum(path, clazzReferenceList,projectPath+"/src/main/resources");
+
     }
+
     //创建 实体类 字段enum
-    private static void generateColumnsEum(String path, List<String> clazzReference, String resourcePath){
+    private static void generateColumnsEum(String path, List<String> clazzReference, String resourcePath) {
         // 初始化模板引擎
         VelocityEngine velocityEngine = new VelocityEngine();
         Properties properties = new Properties();
@@ -181,6 +184,7 @@ public class CodeGenerator {
         try {
             for (String s : clazzReference) {
                 String packageName = s.substring(0, s.lastIndexOf("."));
+
                 Class<?> aClass = Class.forName(s);
                 String enumName = aClass.getSimpleName()+"Column";
 
@@ -217,7 +221,9 @@ public class CodeGenerator {
                 fw.close();
             }
         }catch (Exception e){
-            e.printStackTrace();
+            System.out.println("========================================================");
+            System.out.println("============【请再次运行，生成表字段枚举！】==============");
+            System.out.println("========================================================");
         }
     }
     private static boolean isSimpleType(Class<?> clazz){
