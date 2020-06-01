@@ -1,0 +1,85 @@
+server:
+  port: 8080
+
+logging:
+  config: classpath:log4j2.xml
+#线程池
+async:
+  executor:
+   thread:
+    core_pool_size: 8
+    max_pool_size: 10
+    queue_capacity: 3000
+    keep_alive_seconds: 300
+
+spring:
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+    serialization:
+      write-dates-as-timestamps: false
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/test?useUnicode=true&useSSL=false&characterEncoding=utf8&serverTimezone=GMT%2B8
+    username: root
+    password: 123456789
+# 初始化物理连接个数
+    druid:
+      initial-size: 2
+# 最大连接池数量
+      max-active: 50
+# 最小连接池数量
+      min-idle: 5
+# 获取连接时最大等待时间(ms)
+      max-wait: 120000
+# 开启缓存preparedStatement(PSCache)
+      pool-prepared-statements: true
+# 启用PSCache后，指定每个连接上PSCache的大小
+      max-pool-prepared-statement-per-connection-size: 20
+# 用来检测连接是否有效的sql
+      validation-query: select 1
+# 申请连接时不检测连接是否有效
+      test-on-borrow: false
+# 归还连接时不检测连接是否有效
+      test-on-return: false
+# 申请连接时检测，如果空闲时间大于timeBetweenEvictionRunsMillis，执行validationQuery检测连接是否有效（不影响性能）
+      test-while-idle: true
+# 检测连接的间隔时间，若连接空闲时间 >= minEvictableIdleTimeMillis，则关闭物理连接
+      time-between-eviction-runs-millis: 60000
+# 连接保持空闲而不被驱逐的最小时间(ms)
+      min-evictable-idle-time-millis: 300000
+# 配置监控统计拦截的filters（不配置则监控界面sql无法统计），监控统计filter:stat，日志filter:log4j，防御sql注入filter:wall
+      filters: stat,log4j,wall
+# 支持合并多个DruidDataSource的监控数据
+      use-global-data-source-stat: true
+# 通过connectProperties属性来打开mergeSql(Sql合并)功能；慢SQL记录(配置超过5秒就是慢，默认是3秒)
+      connection-properties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=5000
+
+# quartz
+  quartz:
+    jdbc:
+      # 初始化Quartz表结构,项目第一次启动配置程always,然后改成never 否则已生成的job会被初始化掉
+      initialize-schema: never
+#设置quartz任务的数据持久化方式，默认是内存方式
+    job-store-type: jdbc
+    properties:
+      org:
+        quartz:
+          scheduler:
+            instanceName: etlCleanScheduler
+            instanceId: AUTO
+          jobStore:
+            class: org.quartz.impl.jdbcjobstore.JobStoreTX
+            driverDelegateClass: org.quartz.impl.jdbcjobstore.StdJDBCDelegate
+            #Quartz表前缀
+            tablePrefix: QRTZ_
+            isClustered: true
+            clusterCheckinInterval: 10000
+            useProperties: false
+          threadPool:
+            class: org.quartz.simpl.SimpleThreadPool
+            #线程数 一个任务使用一个线程
+            threadCount: 100
+            threadPriority: 5
+            threadsInheritContextClassLoaderOfInitializingThread: true
