@@ -55,6 +55,7 @@
         <!--过滤掉spring和mybatis的一些无用的DEBUG信息-->
         <logger name="org.springframework" level="INFO"/>
         <logger name="org.mybatis" level="INFO"/>
+        <logger name="freemarker.cache" level="INFO"/>
         <root level="info">
             <appender-ref ref="Console"/>
             <appender-ref ref="RollingFileInfo"/>

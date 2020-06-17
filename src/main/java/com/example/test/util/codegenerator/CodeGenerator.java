@@ -164,7 +164,7 @@ public class CodeGenerator {
 
         String[] include = strategy.getInclude();
         for (String s : include) {
-            clazzReferenceList.add(packageName + ".entity." + StrUtil.upperFirst(s));
+            clazzReferenceList.add(packageName + ".entity." + StrUtil.upperFirst(StrUtil.toCamelCase(s)));
         }
         String path = gc.getOutputDir()+"/"+packageName.replaceAll("\\.", "/")+"/entity";
         generateColumnsEum(path, clazzReferenceList,projectPath+"/src/main/resources");
