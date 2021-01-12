@@ -1,4 +1,4 @@
-package com.metaapp.pandora.util;
+package com.example.test.util;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
